@@ -1,0 +1,1751 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>빛의 성질 레이저 미로 탈출 게임</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Noto+Sans+KR:wght@400;500;700;900&display=swap');
+        
+        body {
+            font-family: 'Noto Sans KR', sans-serif;
+            background: radial-gradient(circle at center, #0f172a 0%, #020617 100%);
+            color: #f8fafc;
+            user-select: none;
+            -webkit-user-select: none;
+            touch-action: none; 
+            overflow: hidden;
+        }
+
+        .font-numeric {
+            font-family: 'Orbitron', sans-serif;
+        }
+
+        .title-font {
+            font-family: 'Noto Sans KR', sans-serif;
+            font-weight: 900;
+            letter-spacing: -0.05em;
+        }
+
+        /* 고급 글래스모피즘 테마 */
+        .glass-panel {
+            background: rgba(15, 23, 42, 0.65);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(56, 189, 248, 0.15);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+        }
+
+        .glass-card-blue {
+            background: rgba(14, 165, 233, 0.05);
+            border: 1px solid rgba(14, 165, 233, 0.2);
+            box-shadow: 0 0 15px rgba(14, 165, 233, 0.05) inset;
+        }
+        .glass-card-blue:hover {
+            border: 1px solid rgba(14, 165, 233, 0.6);
+            box-shadow: 0 0 25px rgba(14, 165, 233, 0.15);
+        }
+
+        .glass-card-teal {
+            background: rgba(20, 184, 166, 0.05);
+            border: 1px solid rgba(20, 184, 166, 0.2);
+            box-shadow: 0 0 15px rgba(20, 184, 166, 0.05) inset;
+        }
+        .glass-card-teal:hover {
+            border: 1px solid rgba(20, 184, 166, 0.6);
+            box-shadow: 0 0 25px rgba(20, 184, 166, 0.15);
+        }
+
+        .glass-card-purple {
+            background: rgba(168, 85, 247, 0.05);
+            border: 1px solid rgba(168, 85, 247, 0.2);
+            box-shadow: 0 0 15px rgba(168, 85, 247, 0.05) inset;
+        }
+        .glass-card-purple:hover {
+            border: 1px solid rgba(168, 85, 247, 0.6);
+            box-shadow: 0 0 25px rgba(168, 85, 247, 0.15);
+        }
+
+        #gameCanvas {
+            box-shadow: 0 0 50px rgba(14, 165, 233, 0.15), 0 0 2px rgba(14, 165, 233, 0.4);
+            background-color: #030712;
+            transition: border-color 0.3s;
+        }
+
+        /* 교구 보관함 슬롯 디자인 */
+        .inventory-slot {
+            aspect-ratio: 1;
+            border: 2px dashed rgba(56, 189, 248, 0.2);
+            border-radius: 16px;
+            background: rgba(30, 41, 59, 0.3);
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .inventory-slot:hover {
+            border-color: rgba(56, 189, 248, 0.6);
+            background: rgba(30, 41, 59, 0.5);
+        }
+
+        /* 펄스 레이저 발사 버튼 디자인 */
+        .btn-glow-red {
+            background: linear-gradient(135deg, #ef4444 0%, #be123c 100%);
+            box-shadow: 0 0 20px rgba(239, 68, 68, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.3);
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+        }
+        .btn-glow-red:hover {
+            background: linear-gradient(135deg, #f43f5e 0%, #e11d48 100%);
+            box-shadow: 0 0 30px rgba(244, 63, 94, 0.6);
+        }
+
+        /* 스크롤바 최적화 */
+        .custom-scroll::-webkit-scrollbar { width: 4px; }
+        .custom-scroll::-webkit-scrollbar-thumb { background: rgba(56, 189, 248, 0.3); border-radius: 10px; }
+        .custom-scroll::-webkit-scrollbar-thumb:hover { background: rgba(56, 189, 248, 0.6); }
+
+        .glow-title {
+            text-shadow: 0 0 20px rgba(56, 189, 248, 0.4);
+        }
+    </style>
+</head>
+<body class="flex flex-col items-center justify-center min-h-screen p-3 md:p-6">
+
+    <!-- 1. 메인 홈 화면 -->
+    <div id="home-screen" class="fixed inset-0 bg-[#020617] flex flex-col items-center justify-center z-50 p-4 overflow-y-auto">
+        <div class="absolute inset-0 bg-[radial-gradient(circle_at_30%_30%,rgba(14,165,233,0.08),transparent_40%)] pointer-events-none"></div>
+        <div class="absolute inset-0 bg-[radial-gradient(circle_at_70%_80%,rgba(168,85,247,0.08),transparent_45%)] pointer-events-none"></div>
+
+        <div class="max-w-4xl w-full text-center space-y-8 glass-panel p-8 md:p-14 rounded-3xl border border-sky-500/20 shadow-2xl relative z-10">
+            <div class="space-y-4">
+                <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-sky-500/10 border border-sky-500/30 text-sky-400 font-semibold tracking-wider text-xs md:text-sm">
+                    🔬 빛의 성질
+                </div>
+                <h1 class="text-4xl md:text-6xl title-font text-white tracking-tight glow-title leading-tight">
+                    <span class="text-transparent bg-clip-text bg-gradient-to-r from-sky-400 via-teal-300 to-purple-400">레이저 미로</span>
+                </h1>
+                <p class="text-slate-400 text-sm md:text-base max-w-xl mx-auto">
+                    지금까지 배운 빛의 3가지 성질인 <span class="text-sky-300 font-bold">빛의 직진, 반사, 굴절</span>의 원리를 시뮬레이션하고,<br>원리를 활용하여 미로를 탈출하세요!
+                </p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 pt-6">
+                <!-- 튜토리얼 모드 카드 -->
+                <button onclick="startMode('tutorial')" class="group text-left p-6 rounded-2xl glass-card-blue transition-all duration-300 relative overflow-hidden flex flex-col justify-between min-h-56">
+                    <div class="absolute top-0 right-0 w-24 h-24 bg-sky-500/5 rounded-full filter blur-xl -mr-6 -mt-6"></div>
+                    <div>
+                        <div class="w-12 h-12 rounded-xl bg-sky-500/10 flex items-center justify-center text-2xl mb-4 border border-sky-500/20">🔬</div>
+                        <h3 class="text-lg font-bold text-sky-300 mb-1.5 group-hover:text-sky-200 transition-colors">1. 튜토리얼 실험실</h3>
+                        <p class="text-xs text-slate-400 leading-relaxed">거울, 물 블록, <b>대형 볼록/오목 렌즈</b>에 <b>3개의 평행 레이저</b>를 비춰보며 빛의 수렴과 발산을 관찰합니다.</p>
+                    </div>
+                    <div class="text-xs text-sky-400 font-semibold flex items-center gap-1 mt-4">
+                        실험 시작하기 <span class="group-hover:translate-x-1 transition-transform">→</span>
+                    </div>
+                </button>
+                
+                <!-- 게임 모드 카드 -->
+                <button onclick="startMode('game')" class="group text-left p-6 rounded-2xl glass-card-teal transition-all duration-300 relative overflow-hidden flex flex-col justify-between min-h-56">
+                    <div class="absolute top-0 right-0 w-24 h-24 bg-teal-500/5 rounded-full filter blur-xl -mr-6 -mt-6"></div>
+                    <div>
+                        <div class="w-12 h-12 rounded-xl bg-teal-500/10 flex items-center justify-center text-2xl mb-4 border border-teal-500/20">🎮</div>
+                        <h3 class="text-lg font-bold text-teal-300 mb-1.5 group-hover:text-teal-200 transition-colors">2. 미로 탈출 게임</h3>
+                        <p class="text-xs text-slate-400 leading-relaxed">거울의 반사와 물 블록의 굴절 현상만을 사용하여 탈출구로 골인하는 브레인 트레이닝 미로 퍼즐 단계입니다!</p>
+                    </div>
+                    <div class="text-xs text-teal-400 font-semibold flex items-center gap-1 mt-4">
+                        도전 시작하기 <span class="group-hover:translate-x-1 transition-transform">→</span>
+                    </div>
+                </button>
+
+                <!-- 창작 모드 카드 -->
+                <button onclick="startMode('creator')" class="group text-left p-6 rounded-2xl glass-card-purple transition-all duration-300 relative overflow-hidden flex flex-col justify-between min-h-56">
+                    <div class="absolute top-0 right-0 w-24 h-24 bg-purple-500/5 rounded-full filter blur-xl -mr-6 -mt-6"></div>
+                    <div>
+                        <div class="w-12 h-12 rounded-xl bg-purple-500/10 flex items-center justify-center text-2xl mb-4 border border-purple-500/20">🛠️</div>
+                        <h3 class="text-lg font-bold text-purple-300 mb-1.5 group-hover:text-purple-200 transition-colors">3. 미로 설계하기</h3>
+                        <p class="text-xs text-slate-400 leading-relaxed">나만의 벽, 거울, 물 블록을 맵에 배치하여 나만의 독특한 빛의 경로를 디자인해 보세요. 테스트 작동 모드도 즉시 지원합니다.</p>
+                    </div>
+                    <div class="text-xs text-purple-400 font-semibold flex items-center gap-1 mt-4">
+                        설계 시작하기 <span class="group-hover:translate-x-1 transition-transform">→</span>
+                    </div>
+                </button>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- 알림 및 클리어 안내 공통 모달 -->
+    <div id="game-modal" class="fixed inset-0 bg-black/95 flex items-center justify-center z-[100] p-4 hidden">
+        <div class="glass-panel max-w-lg w-full p-8 rounded-3xl text-center shadow-2xl border border-sky-500/30 relative">
+            <button id="modal-close-btn" class="absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-full bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white transition-colors text-lg leading-none">✕</button>
+            <div class="w-16 h-16 rounded-full bg-sky-500/10 border border-sky-500/20 flex items-center justify-center text-3xl mx-auto mb-4" id="modal-icon">💡</div>
+            <h2 id="modal-title" class="text-3xl title-font text-sky-400 mb-3">안내</h2>
+            <div id="modal-content" class="text-slate-300 mb-8 text-sm md:text-base leading-relaxed space-y-4">
+                <!-- 동적 텍스트 주입 -->
+            </div>
+            <button id="modal-btn" class="w-full bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-400 hover:to-blue-500 text-white font-bold text-lg py-3.5 rounded-2xl transition-all shadow-lg shadow-sky-500/10 active:scale-95">
+                확인
+            </button>
+        </div>
+    </div>
+
+    <!-- 상단 컨트롤 헤더 -->
+    <div class="w-full max-w-6xl flex flex-col md:flex-row justify-between items-center gap-4 mb-4 z-10">
+        <div class="flex items-center gap-4 w-full md:w-auto">
+            <button onclick="goHome()" class="glass-panel px-4 py-2 rounded-full text-xs text-sky-300 hover:text-white hover:bg-sky-500/20 font-bold transition flex items-center gap-1.5">
+                <span>🏠</span> 홈화면
+            </button>
+            <div>
+                <h2 id="mode-badge" class="text-[10px] font-bold text-sky-400 tracking-widest font-numeric uppercase">GAME MODE</h2>
+                <h1 id="title-display" class="text-xl md:text-2xl title-font text-white drop-shadow">미로 탈출</h1>
+            </div>
+        </div>
+
+        <div class="flex items-center gap-3 justify-between md:justify-end w-full md:w-auto flex-wrap">
+            <div id="lives-container" class="flex items-center gap-2 bg-slate-900/80 border border-slate-800/80 px-4 py-1.5 rounded-full">
+                <span class="text-xs text-slate-400 font-bold">LIVES</span>
+                <div id="heart-ui" class="flex gap-1 text-rose-500 text-sm filter drop-shadow">
+                    ❤️ ❤️ ❤️
+                </div>
+            </div>
+
+            <div class="bg-slate-900/80 border border-slate-800/80 px-4 py-1.5 rounded-full text-xs flex items-center gap-2">
+                <span class="w-2 h-2 rounded-full bg-sky-400 animate-pulse"></span>
+                <span class="text-slate-400">상태:</span>
+                <span id="status" class="text-sky-400 font-bold">배치 대기 중</span>
+            </div>
+
+            <button id="reset-btn" class="glass-panel px-4 py-1.5 rounded-full text-xs hover:bg-rose-950/30 hover:border-rose-500/50 text-slate-300 font-bold transition flex items-center gap-1">
+                <span>🧹</span> 전체 리셋
+            </button>
+        </div>
+    </div>
+
+    <!-- 메인 레이아웃 구역 -->
+    <div class="w-full max-w-6xl flex flex-col lg:flex-row items-stretch justify-center gap-6">
+        
+        <!-- 캔버스 컨테이너 (좌측) -->
+        <div class="relative flex flex-col items-center flex-grow glass-panel p-4 md:p-6 rounded-3xl">
+            <div id="tutorial-control" class="hidden w-full bg-sky-500/5 border border-sky-500/20 p-4 rounded-2xl mb-4 flex flex-col sm:flex-row items-center justify-between gap-4">
+                <div class="flex items-center gap-2">
+                    <span class="text-xs font-bold text-sky-400 flex items-center gap-1">⚡ 레이저 각도 회전:</span>
+                </div>
+                <div class="flex items-center gap-3 w-full sm:w-auto flex-grow max-w-md">
+                    <input type="range" id="laser-angle-slider" min="0" max="360" value="0" class="w-full accent-sky-400 cursor-pointer h-2 bg-slate-800 rounded-lg">
+                    <span id="laser-angle-text" class="text-sm font-numeric text-sky-400 font-bold w-14 text-right">0°</span>
+                </div>
+            </div>
+
+            <div class="relative w-full flex justify-center">
+                <canvas id="gameCanvas" class="rounded-2xl border border-sky-500/20 max-w-full cursor-pointer"></canvas>
+            </div>
+
+            <div id="action-panel" class="w-full flex flex-col items-center gap-3 mt-4">
+                <div class="flex w-full gap-2 justify-center flex-wrap">
+                    <button id="test-play-btn" class="hidden flex-1 min-w-[140px] bg-gradient-to-r from-rose-600 to-red-600 hover:from-rose-500 hover:to-red-500 text-white font-bold text-base py-3.5 rounded-2xl shadow-lg shadow-rose-500/20 active:scale-95 transition-all">
+                        ⚡ 레이저 발사
+                    </button>
+                    <button id="game-start-btn" class="hidden flex-1 min-w-[140px] bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-500 hover:to-emerald-500 text-white font-bold text-base py-3.5 rounded-2xl shadow-lg shadow-teal-500/20 active:scale-95 transition-all">
+                        🎮 게임 시작
+                    </button>
+                    <button id="back-to-edit-btn" class="hidden flex-1 min-w-[140px] bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-bold text-base py-3.5 rounded-2xl shadow-lg shadow-purple-500/20 active:scale-95 transition-all">
+                        ✏️ 편집으로 돌아가기
+                    </button>
+                    <button id="share-btn" class="hidden flex-1 min-w-[140px] bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-base py-3.5 rounded-2xl shadow-lg shadow-emerald-500/20 active:scale-95 transition-all">
+                        🔗 미로 공유하기
+                    </button>
+                    <button id="fire-btn" class="fire-btn flex-1 min-w-[160px] text-white font-bold text-base py-3.5 rounded-2xl active:scale-95 transition-all btn-glow-red">
+                        ⚡ 레이저 발사! (직진성 관찰)
+                    </button>
+                </div>
+                
+                <div class="w-full flex justify-between text-[11px] text-slate-500 px-2">
+                    <span id="guide-tip" class="text-sky-300">💡 [터치] 보관함에서 장치를 누른 뒤, 지도 빈 공간을 눌러 배치하세요!</span>
+                    <span>5학년 1학기 과학 - 빛의 성질</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- 아이템함 / 컨트롤러 패널 (우측) -->
+        <div id="sidebar" class="glass-panel p-5 rounded-3xl flex flex-col gap-4 items-center w-full lg:w-64 shrink-0">
+            <div class="w-full text-center border-b border-slate-800/80 pb-3">
+                <h2 class="title-font text-lg text-sky-300 flex items-center justify-center gap-1.5">
+                    🎒 <span id="sidebar-title">보관된 교구</span>
+                </h2>
+                <p class="text-[10px] text-slate-400 mt-1">사용할 블록을 <b class="text-sky-300">터치(클릭)</b> 하세요.</p>
+            </div>
+            
+            <div id="inventory-container" class="grid grid-cols-4 lg:grid-cols-2 gap-3 overflow-y-auto p-1 w-full custom-scroll h-auto lg:max-h-[300px]">
+                <!-- JS에서 동적으로 생성됨 -->
+            </div>
+
+            <!-- 선택된 장치 회수(삭제) 버튼 -->
+            <button id="delete-btn" class="hidden w-full py-3 bg-rose-500/20 text-rose-400 border border-rose-500/50 rounded-xl font-bold text-sm hover:bg-rose-500/40 transition-colors shadow-lg animate-pulse">
+                🗑️ 이 장치 회수하기
+            </button>
+            
+            <div class="w-full space-y-2 text-[10px] text-slate-300 bg-slate-950/40 p-3 rounded-2xl border border-slate-800/80 mt-auto">
+                <p class="font-bold border-b border-slate-800 pb-1.5 text-sky-400 flex items-center gap-1">
+                    <span>🔬</span> 빛의 물리적 반응 법칙
+                </p>
+                <div class="space-y-1 text-slate-400" id="law-description">
+                    <!-- 모드 별로 설명 갱신 -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const statusEl = document.getElementById('status');
+        const titleDisplay = document.getElementById('title-display');
+        const modeBadge = document.getElementById('mode-badge');
+        const heartUI = document.getElementById('heart-ui');
+        const gameModal = document.getElementById('game-modal');
+        const modalTitle = document.getElementById('modal-title');
+        const modalContent = document.getElementById('modal-content');
+        const modalBtn = document.getElementById('modal-btn');
+        document.getElementById('modal-close-btn').onclick = () => gameModal.classList.add('hidden');
+        const fireBtn = document.getElementById('fire-btn');
+        const testPlayBtn = document.getElementById('test-play-btn');
+        const gameStartBtn = document.getElementById('game-start-btn');
+        const backToEditBtn = document.getElementById('back-to-edit-btn');
+        const shareBtn = document.getElementById('share-btn');
+        const inventoryContainer = document.getElementById('inventory-container');
+        const laserAngleSlider = document.getElementById('laser-angle-slider');
+        const laserAngleText = document.getElementById('laser-angle-text');
+        const tutorialControl = document.getElementById('tutorial-control');
+        const livesContainer = document.getElementById('lives-container');
+        const sidebarTitle = document.getElementById('sidebar-title');
+        const guideTip = document.getElementById('guide-tip');
+        const lawDescription = document.getElementById('law-description');
+        const deleteBtn = document.getElementById('delete-btn');
+
+        // 상태 변수
+        let currentMode = 'home'; 
+        let cellSize = 0;
+        let gridCols = 10;
+        let gridRows = 8;
+        let completedLevels = new Set();
+        let lives = 3;
+
+        let mirrors = [];      
+        let walls = [];        
+        let emitter = { x: 1, y: 1, dir: 0, angle: 0 }; 
+        let exit = { x: 8, y: 6 };
+        
+        let laserPaths = []; 
+        let isLaserActive = false;
+        
+        let activeSelection = null; 
+        let gameLevelIndex = 0;
+        let inventoryItems = [];
+
+        // 45도 굴절에 완벽하게 맞춰진 5종 타일 맵 디자인 (오차 및 버그 수정됨)
+        const GAME_LEVELS = [
+            {
+                name: "1단계: 거울로 빛의 반사 배우기",
+                desc: "거울은 빛을 직각으로 반사시켜 줍니다. 평면거울 1개를 우측에서 터치하고 맵의 빈 공간을 다시 터치하여 탈출구 🚪로 빛을 유도하세요!",
+                successMsg: "거울의 반사를 완벽하게 이해하셨네요! 빛이 직각으로 예쁘게 꺾였습니다.",
+                grid: [
+                    ['1','1','1','1','1','1','1','1','1','1'],
+                    ['1','E','0','0','0','0','0','0','0','1'],
+                    ['1','1','1','1','1','1','0','1','1','1'],
+                    ['1','1','1','1','1','1','0','1','1','1'],
+                    ['1','1','1','1','1','1','X','1','1','1'],
+                    ['1','1','1','1','1','1','1','1','1','1']
+                ],
+                items: [
+                    { type: 'mirror', active: true }
+                ]
+            },
+            {
+                name: "2단계: 이중 반사 굴절 미로",
+                desc: "이번엔 거울이 3개 필요합니다. 벽에 가로막힌 레이저 경로를 지그재그 모양으로 꺾어 탈출구로 골인해 보세요!",
+                successMsg: "거울의 반사만을 이용해 장애물을 완벽하게 피하는 멋진 경로를 만들었습니다!",
+                grid: [
+                    ['1','1','1','1','1','1','1','1','1','1'],
+                    ['1','E','0','0','0','0','0','1','1','1'],
+                    ['1','1','1','1','1','1','0','1','1','1'],
+                    ['1','1','1','1','1','1','0','1','1','1'],
+                    ['1','1','1','1','1','1','0','1','1','1'],
+                    ['1','1','0','0','0','0','0','1','1','1'],
+                    ['1','1','X','1','1','1','1','1','1','1'],
+                    ['1','1','1','1','1','1','1','1','1','1']
+                ],
+                items: [
+                    { type: 'mirror', active: true },
+                    { type: 'mirror', active: true },
+                    { type: 'mirror', active: true }
+                ]
+            },
+            {
+                name: "3단계: 물을 통과하는 빛의 굴절",
+                desc: "빛은 물을 통과할 때 대각선 방향으로 꺾이는 '굴절'이 일어납니다! 물 블록을 배치하고 터치하여 꺾이는 방향(↻/↺)을 조절하세요.",
+                successMsg: "물 블록을 통과할 때 빛이 대각선으로 꺾이는 원리를 아주 훌륭하게 활용하셨습니다!",
+                grid: [
+                    ['1','1','1','1','1','1','1','1','1','1'],
+                    ['1','E','0','0','0','0','0','0','0','1'],
+                    ['1','1','1','1','1','1','1','0','0','1'],
+                    ['1','1','1','1','1','1','1','1','X','1'],
+                    ['1','1','1','1','1','1','1','1','1','1']
+                ],
+                items: [
+                    { type: 'water', active: true }
+                ]
+            },
+            {
+                name: "4단계: 반사와 굴절의 연계 모험",
+                desc: "평면거울로 꺾인 빛을 한 번 더 물 블록으로 통과시켜 목적지로 다다르게 해야 합니다!",
+                successMsg: "거울(반사)과 물(굴절) 두 가지 빛의 성질을 완벽하게 조합해 냈습니다!",
+                grid: [
+                    ['1','1','1','1','1','1','1','1','1','1'],
+                    ['1','E','0','0','0','0','0','1','1','1'],
+                    ['1','1','1','1','1','1','0','1','1','1'],
+                    ['1','1','1','1','1','1','0','1','1','1'],
+                    ['1','1','1','1','0','0','0','1','1','1'],
+                    ['1','1','1','1','1','X','1','1','1','1'],
+                    ['1','1','1','1','1','1','1','1','1','1']
+                ],
+                items: [
+                    { type: 'mirror', active: true },
+                    { type: 'water', active: true }
+                ]
+            },
+            {
+                name: "5단계: 광학의 끝 - 최종 마스터 미로",
+                desc: "직진, 반사, 굴절! 2개의 물 블록이 선사하는 환상적인 대각선 단축 루트를 설계하여 탈출하세요!",
+                successMsg: "모든 광학 기구를 완벽하게 통제하여 마스터 미로를 클리어했습니다! 훌륭합니다!",
+                grid: [
+                    ['1','1','1','1','1','1','1','1','1'],
+                    ['1','E','0','1','1','1','1','1','1'],
+                    ['1','1','1','0','1','1','1','1','1'], 
+                    ['1','1','1','1','0','1','1','1','1'], 
+                    ['1','1','1','1','1','0','1','1','1'], 
+                    ['1','1','1','1','1','0','1','1','1'], 
+                    ['1','X','0','0','0','0','1','1','1'], 
+                    ['1','1','1','1','1','1','1','1','1']
+                ],
+                items: [
+                    { type: 'mirror', active: true },
+                    { type: 'mirror', active: true },
+                    { type: 'water', active: true },
+                    { type: 'water', active: true }
+                ]
+            }
+        ];
+
+        function updateDeleteBtnUI() {
+            if (activeSelection?.source === 'board') {
+                deleteBtn.classList.remove('hidden');
+            } else {
+                deleteBtn.classList.add('hidden');
+            }
+        }
+
+        function handleSelectionChange() {
+            createInventorySlots(); 
+            updateDeleteBtnUI();
+            draw(); 
+        }
+
+        function startMode(mode) {
+            currentMode = mode;
+            document.getElementById('home-screen').classList.add('hidden');
+            
+            lives = 3;
+            mirrors = [];
+            walls = [];
+            isLaserActive = false;
+            laserPaths = [];
+            activeSelection = null;
+            statusEl.innerText = "배치 대기 중";
+            statusEl.className = "text-sky-400 font-bold";
+
+            tutorialControl.classList.add('hidden');
+            livesContainer.classList.add('hidden');
+            testPlayBtn.classList.add('hidden');
+            gameStartBtn.classList.add('hidden');
+            backToEditBtn.classList.add('hidden');
+            shareBtn.classList.add('hidden');
+            fireBtn.classList.remove('hidden');
+            updateDeleteBtnUI();
+
+            if (mode === 'tutorial') {
+                modeBadge.innerText = "TUTORIAL LAB";
+                titleDisplay.innerText = "빛의 성질 튜토리얼 실험실";
+                sidebarTitle.innerText = "실험용 광학 교구";
+                guideTip.innerText = "💡 렌즈를 꺼내면 3중 평행 레이저가 방출되어 굴절을 명확히 볼 수 있습니다!";
+                
+                lawDescription.innerHTML = `
+                    <p>🪞 <b class="text-slate-200">평면거울:</b> 반사 법칙 (입사각=반사각)</p>
+                    <p>💧 <b class="text-slate-200">물 블록:</b> 빛이 <b>45도(대각선)</b>로 정확히 꺾입니다.</p>
+                    <p>🔍 <b class="text-amber-400">대형 볼록렌즈:</b> 평행한 빛을 중앙으로 모아줍니다.</p>
+                    <p>👓 <b class="text-purple-400">대형 오목렌즈:</b> 평행한 빛을 바깥으로 퍼뜨립니다.</p>
+                `;
+
+                setupTutorialMap();
+            } 
+            else if (mode === 'game') {
+                modeBadge.innerText = "GAME STAGE";
+                livesContainer.classList.remove('hidden');
+                sidebarTitle.innerText = "미션 교구";
+                guideTip.innerText = "💡 [터치] 보관함에서 장치를 누른 뒤, 지도 빈 공간을 눌러 배치하세요!";
+                
+                lawDescription.innerHTML = `
+                    <p>🪞 <b class="text-slate-200">평면거울:</b> 터치 시 45도씩 회전하며 빛을 반사시킵니다.</p>
+                    <p>💧 <b class="text-slate-200">물 블록:</b> 통과 시 빛이 <b>45도</b>로 꺾입니다. 터치해 ↻/↺ 방향을 변경하세요.</p>
+                `;
+
+                gameLevelIndex = 0;
+                loadGameStage(gameLevelIndex);
+            } 
+            else if (mode === 'creator') {
+                modeBadge.innerText = "CREATOR LAB";
+                titleDisplay.innerText = "미로 설계하기";
+                sidebarTitle.innerText = "배치할 블록";
+                guideTip.innerText = "💡 원하는 벽과 굴절/반사 블록을 눌러 맵에 배치하며 나만의 미로를 조각해 보세요!";
+                testPlayBtn.classList.remove('hidden');
+                testPlayBtn.innerText = "⚡ 레이저 발사";
+                gameStartBtn.classList.remove('hidden');
+                shareBtn.classList.remove('hidden');
+                fireBtn.classList.add('hidden');
+
+                lawDescription.innerHTML = `
+                    <p>🪞 <b class="text-slate-200">평면거울:</b> 거울 반사 경로 설계</p>
+                    <p>💧 <b class="text-slate-200">물 블록:</b> 45도 굴절 구간 설계</p>
+                    <p>🧱 <b class="text-slate-200">미로 벽:</b> 빛이 통과할 수 없는 차단벽</p>
+                `;
+
+                setupCreatorMap();
+            }
+        }
+
+        function goHome() {
+            currentMode = 'home';
+            document.getElementById('home-screen').classList.remove('hidden');
+            if (window.location.hash.startsWith('#s=')) {
+                history.replaceState(null, '', window.location.pathname);
+            }
+        }
+
+        function openMazeByCode() {
+            const input = document.getElementById('maze-code-home-input');
+            const code  = input ? input.value.trim() : '';
+
+            if (!code) {
+                input?.focus();
+                return;
+            }
+
+            // URL 해시 형식(#s=...)에서 코드만 추출하는 경우도 처리
+            const clean = code.startsWith('#s=') ? code.slice(3)
+                        : code.includes('#s=') ? code.split('#s=')[1]
+                        : code;
+
+            const data = deserializeMaze(clean);
+            if (data) {
+                if (input) input.value = '';
+                loadSharedMaze(data);
+            } else {
+                showModal(
+                    "⚠️ 코드 오류",
+                    "올바른 미로 코드가 아닙니다.<br><span class='text-slate-400 text-sm'>친구에게 받은 코드를 그대로 붙여넣었는지 확인해 주세요.</span>",
+                    "다시 시도"
+                );
+            }
+        }
+
+        function showModal(title, text, btnText, callback) {
+            modalTitle.innerText = title;
+            modalContent.innerHTML = text;
+            modalBtn.innerText = btnText;
+            gameModal.classList.remove('hidden');
+            modalBtn.onclick = () => {
+                gameModal.classList.add('hidden');
+                if (callback) callback();
+            };
+        }
+
+        function setupTutorialMap() {
+            gridCols = 8;
+            gridRows = 6;
+            resizeCanvas();
+
+            emitter = { x: 1, y: 3, dir: 0, angle: 0 };
+            exit = { x: 7, y: 3 }; 
+            walls = [];
+
+            inventoryItems = [
+                { type: 'mirror', active: true, label: "평면거울" },
+                { type: 'water', active: true, label: "물 블록" },
+                { type: 'convex', active: true, label: "볼록렌즈" },
+                { type: 'concave', active: true, label: "오목렌즈" }
+            ];
+
+            tutorialControl.classList.remove('hidden');
+            laserAngleSlider.value = 0;
+            laserAngleText.innerText = "0°";
+            emitter.angle = 0;
+
+            createInventorySlots();
+            isLaserActive = false;
+            draw();
+        }
+
+        function loadGameStage(idx) {
+            if (idx >= GAME_LEVELS.length) {
+                showModal("🎖️ 미션 올클리어!", "모든 5학년 '빛의 성질' 탈출 미로를 돌파하셨습니다! 이제 <b>미로 설계 모드</b>에서 나만의 참신한 레이저 탈출 맵을 설계해 보세요!", "설계 모드 열기", () => {
+                    startMode('creator');
+                });
+                return;
+            }
+
+            const stage = GAME_LEVELS[idx];
+            titleDisplay.innerText = stage.name;
+            gridRows = stage.grid.length;
+            gridCols = stage.grid[0].length;
+            resizeCanvas();
+
+            mirrors = [];
+            walls = [];
+            isLaserActive = false;
+            laserPaths = [];
+            activeSelection = null;
+            handleSelectionChange();
+
+            statusEl.innerText = "조준 및 배치 중";
+            statusEl.className = "text-sky-400 font-bold";
+
+            for (let y = 0; y < gridRows; y++) {
+                for (let x = 0; x < gridCols; x++) {
+                    const cell = stage.grid[y][x];
+                    if (cell === '1') {
+                        walls.push({ x, y });
+                    } else if (cell === 'E') {
+                        emitter = { x, y, dir: 0, angle: 0 };
+                        if (x + 1 < gridCols && stage.grid[y][x + 1] !== '1') emitter.dir = 0;
+                        else if (y + 1 < gridRows && stage.grid[y + 1][x] !== '1') emitter.dir = 1;
+                        else if (x - 1 >= 0 && stage.grid[y][x - 1] !== '1') emitter.dir = 2;
+                        else emitter.dir = 3;
+                    } else if (cell === 'X') {
+                        exit = { x, y };
+                    }
+                }
+            }
+
+            inventoryItems = JSON.parse(JSON.stringify(stage.items));
+            createInventorySlots();
+
+            showModal(stage.name, `<p class="text-left text-slate-300 leading-relaxed">${stage.desc}</p>`, "장치 설치하기");
+        }
+
+        function setupCreatorMap() {
+            gridCols = 10;
+            gridRows = 8;
+            resizeCanvas();
+
+            emitter = { x: 1, y: 1, dir: 0, angle: 0 };
+            exit = { x: 8, y: 6 };
+            walls = [];
+            mirrors = [];
+            isLaserActive = false;
+            activeSelection = null;
+            handleSelectionChange();
+
+            inventoryItems = [
+                { type: 'mirror', active: true, label: "평면거울" },
+                { type: 'water', active: true, label: "물 블록" },
+                { type: 'wall', active: true, label: "미로 벽" }
+            ];
+
+            createInventorySlots();
+            showModal("📐 나만의 미로 만들기", "우측 보관함에서 장치를 <b class='text-sky-300'>터치</b>한 뒤 화면의 빈 공간을 <b class='text-sky-300'>터치</b>하여 배치하세요. 완성한 뒤 아래 <b>[내가 만든 미로 실행하기]</b> 버튼을 누르면 직접 플레이어로 도전할 수 있습니다!", "만들기 시작");
+        }
+
+        function resizeCanvas() {
+            const isMobile = window.innerWidth < 1024;
+            const maxW = window.innerWidth * (isMobile ? 0.92 : 0.65);
+            const maxH = window.innerHeight * (isMobile ? 0.45 : 0.58);
+            cellSize = Math.min(maxW / gridCols, maxH / gridRows);
+            canvas.width = gridCols * cellSize;
+            canvas.height = gridRows * cellSize;
+        }
+
+        function createInventorySlots() {
+            inventoryContainer.innerHTML = '';
+            
+            inventoryItems.forEach((item, i) => {
+                const isSelected = activeSelection?.source === 'inventory' && activeSelection.index === i;
+                const slot = document.createElement('div');
+                
+                slot.className = `inventory-slot flex flex-col justify-between p-2 cursor-pointer transition-all ${isSelected ? 'ring-2 ring-sky-400 bg-sky-900/40 scale-105 shadow-[0_0_15px_rgba(56,189,248,0.5)]' : ''}`;
+                
+                if (!item.active) {
+                    slot.style.opacity = '0.25';
+                    slot.style.cursor = 'default';
+                }
+
+                const thumb = document.createElement('div');
+                thumb.style.width = '100%';
+                thumb.className = `flex-grow flex items-center justify-center rounded-lg relative overflow-hidden bg-slate-950/60 border ${isSelected ? 'border-sky-400/50' : 'border-slate-800'}`;
+
+                let name = "";
+                if (item.type === 'mirror') {
+                    name = "평면거울";
+                    const mirrorLine = document.createElement('div');
+                    mirrorLine.style.width = '80%'; mirrorLine.style.height = '4px'; 
+                    mirrorLine.style.background = 'linear-gradient(90deg, #38bdf8, #e2e8f0)';
+                    mirrorLine.style.transform = 'rotate(45deg)';
+                    mirrorLine.style.boxShadow = '0 0 10px #38bdf8';
+                    thumb.appendChild(mirrorLine);
+                } else if (item.type === 'water') {
+                    name = "물 블록";
+                    const waterCube = document.createElement('div');
+                    waterCube.style.width = '24px'; waterCube.style.height = '24px';
+                    waterCube.style.background = 'rgba(14, 165, 233, 0.4)';
+                    waterCube.style.border = '2px solid #38bdf8';
+                    waterCube.style.borderRadius = '4px';
+                    waterCube.className = 'flex flex-col items-center justify-center text-[10px] animate-pulse leading-none gap-0.5';
+                    waterCube.innerHTML = '<span class="text-white font-bold">↻</span><span>💧</span>';
+                    thumb.appendChild(waterCube);
+                } else if (item.type === 'convex') {
+                    name = "볼록렌즈";
+                    const lens = document.createElement('div');
+                    lens.style.width = '14px'; lens.style.height = '26px'; lens.style.borderRadius = '50%';
+                    lens.style.background = 'rgba(234, 179, 8, 0.5)';
+                    lens.style.border = '1.5px solid #eab308';
+                    lens.style.boxShadow = '0 0 8px #eab308';
+                    thumb.appendChild(lens);
+                } else if (item.type === 'concave') {
+                    name = "오목렌즈";
+                    const lens = document.createElement('div');
+                    lens.style.width = '14px'; lens.style.height = '26px';
+                    lens.style.background = 'rgba(168, 85, 247, 0.45)';
+                    lens.style.border = '1.8px solid #a855f7';
+                    lens.style.borderRadius = '3px';
+                    lens.style.boxShadow = '0 0 8px #a855f7';
+                    thumb.appendChild(lens);
+                } else if (item.type === 'wall') {
+                    name = "미로 벽";
+                    const block = document.createElement('div');
+                    block.style.width = '20px'; block.style.height = '20px';
+                    block.style.background = '#475569';
+                    block.style.border = '2px solid #64748b';
+                    block.style.borderRadius = '3px';
+                    thumb.appendChild(block);
+                }
+
+                slot.appendChild(thumb);
+
+                const label = document.createElement('span');
+                label.innerText = name;
+                label.className = `text-[9px] font-bold mt-1 truncate max-w-full text-center ${isSelected ? 'text-sky-300' : 'text-slate-400'}`;
+                slot.appendChild(label);
+
+                slot.addEventListener('click', () => {
+                    if (item.active) {
+                        if (activeSelection?.source === 'inventory' && activeSelection.index === i) {
+                            activeSelection = null; 
+                        } else {
+                            activeSelection = { source: 'inventory', index: i };
+                        }
+                        handleSelectionChange();
+                    }
+                });
+
+                inventoryContainer.appendChild(slot);
+            });
+        }
+
+        // 삭제(회수) 버튼 기능
+        deleteBtn.addEventListener('click', () => {
+            if (activeSelection?.source === 'board') {
+                handleReturnToInventory(activeSelection.block);
+            }
+        });
+
+        // 🌟 클릭 위치 좌표 보정 및 스마트 터치 시스템
+        canvas.addEventListener('click', (e) => {
+            const rect = canvas.getBoundingClientRect();
+            // CSS 배율 보정 계수 (화면 축소/확대 시 오작동 방지)
+            const scaleX = canvas.width / rect.width;
+            const scaleY = canvas.height / rect.height;
+            
+            let clientX = e.clientX;
+            let clientY = e.clientY;
+            
+            // 모바일 터치 이벤트의 경우
+            if (e.touches && e.touches.length > 0) {
+                clientX = e.touches[0].clientX;
+                clientY = e.touches[0].clientY;
+            } else if (e.changedTouches && e.changedTouches.length > 0) {
+                clientX = e.changedTouches[0].clientX;
+                clientY = e.changedTouches[0].clientY;
+            }
+
+            const x = (clientX - rect.left) * scaleX;
+            const y = (clientY - rect.top) * scaleY;
+            const gx = Math.floor(x / cellSize);
+            const gy = Math.floor(y / cellSize);
+
+            const clickedMirror = mirrors.find(m => m.x === gx && m.y === gy);
+            const clickedWall = walls.find(w => w.x === gx && w.y === gy && w.isUserWall);
+            const clickedBlock = clickedMirror || clickedWall;
+
+            // 1. 이미 선택된 맵 위의 장치를 또 누른 경우 -> 회전
+            if (activeSelection?.source === 'board' && activeSelection.block === clickedBlock) {
+                const step = (clickedBlock.type === 'mirror') ? 45 : 90;
+                clickedBlock.angle = (clickedBlock.angle + step) % 360;
+                
+                if (currentMode === 'tutorial' || isLaserActive) calculateLaser();
+                draw(); 
+                return;
+            }
+
+            // 2. 다른 장치를 누른 경우 -> 선택 전환
+            if (clickedBlock) {
+                activeSelection = { source: 'board', block: clickedBlock };
+                handleSelectionChange();
+                return;
+            }
+
+            // 3. 빈 공간을 클릭한 경우
+            const isBlockedByStatic = walls.some(w => w.x === gx && w.y === gy && !w.isUserWall) || 
+                                      (emitter.x === gx && emitter.y === gy) || 
+                                      (exit.x === gx && exit.y === gy);
+            
+            if (!isBlockedByStatic) {
+                // 보관함에서 장치를 들고 있던 경우 -> 맵에 배치
+                if (activeSelection?.source === 'inventory') {
+                    const sourceItem = inventoryItems[activeSelection.index];
+                    
+                    if (sourceItem.type === 'wall') {
+                        walls.push({ x: gx, y: gy, isUserWall: true, inventoryIdx: activeSelection.index });
+                    } else {
+                        let defaultAngle = 45;
+                        if (sourceItem.type === 'convex' || sourceItem.type === 'concave' || sourceItem.type === 'water') {
+                            defaultAngle = 0; 
+                        }
+                        mirrors.push({
+                            x: gx, y: gy, angle: defaultAngle, type: sourceItem.type, inventoryIdx: activeSelection.index
+                        });
+                    }
+
+                    if (currentMode === 'game') sourceItem.active = false; 
+                    
+                    activeSelection = null; 
+                    handleSelectionChange();
+                    
+                    if (currentMode === 'tutorial' || isLaserActive) calculateLaser();
+                } 
+                // 맵에 있는 장치를 선택 중이었던 경우 -> 이동
+                else if (activeSelection?.source === 'board') {
+                    activeSelection.block.x = gx;
+                    activeSelection.block.y = gy;
+                    
+                    activeSelection = null; 
+                    handleSelectionChange();
+                    
+                    if (currentMode === 'tutorial' || isLaserActive) calculateLaser();
+                }
+            }
+        });
+
+        function handleReturnToInventory(targetBlock) {
+            if (!targetBlock) return;
+
+            if (targetBlock.inventoryIdx !== undefined) {
+                inventoryItems[targetBlock.inventoryIdx].active = true;
+                
+                if (mirrors.includes(targetBlock)) {
+                    mirrors = mirrors.filter(m => m !== targetBlock);
+                } else {
+                    walls = walls.filter(w => w !== targetBlock);
+                }
+                
+                activeSelection = null;
+                handleSelectionChange();
+            }
+
+            if (currentMode === 'tutorial' || isLaserActive) {
+                calculateLaser();
+            } else {
+                isLaserActive = false;
+                statusEl.innerText = "조준 중...";
+            }
+        }
+
+        laserAngleSlider.oninput = (e) => {
+            const ang = parseInt(e.target.value);
+            laserAngleText.innerText = ang + "°";
+            emitter.angle = ang;
+            if (isLaserActive) calculateLaser();
+            else draw();
+        };
+
+        // 핵심 레이저 물리 트래킹 로직 (무한루프 버그 완벽 수정)
+        function traceSingleLaser(sx, sy, sAngleRad) {
+            let curX = sx;
+            let curY = sy;
+            let dx = Math.cos(sAngleRad);
+            let dy = Math.sin(sAngleRad);
+
+            const path = [{ x: curX, y: curY }];
+            let limitCount = 0;
+            const stepSize = 3.5;
+            let lastHitBlock = null; // 물 블록 무한 굴절 방지 트래커
+
+            while (limitCount < 800) {
+                limitCount++;
+                let nextX = curX + dx * stepSize;
+                let nextY = curY + dy * stepSize;
+
+                const gx = Math.floor(nextX / cellSize);
+                const gy = Math.floor(nextY / cellSize);
+
+                if (gx < 0 || gy < 0 || gx >= gridCols || gy >= gridRows) {
+                    path.push({ x: nextX, y: nextY });
+                    break;
+                }
+
+                if (walls.some(w => w.x === gx && w.y === gy)) {
+                    path.push({ x: nextX, y: nextY });
+                    break;
+                }
+
+                if (exit.x === gx && exit.y === gy) {
+                    path.push({ x: (gx + 0.5) * cellSize, y: (gy + 0.5) * cellSize });
+                    break;
+                }
+
+                const block = mirrors.find(m => m.x === gx && m.y === gy);
+                if (block) {
+                    // 한 번 부딪힌 블록은 셀을 완전히 벗어날 때까지 추가 각도 연산을 하지 않음
+                    if (block !== lastHitBlock) {
+                        const bx = (block.x + 0.5) * cellSize;
+                        const by = (block.y + 0.5) * cellSize;
+                        const distance = Math.sqrt((nextX - bx) ** 2 + (nextY - by) ** 2);
+
+                        const isTutorialLens = (currentMode === 'tutorial' && (block.type === 'convex' || block.type === 'concave'));
+                        const threshold = isTutorialLens ? (cellSize * 0.45) : (cellSize * 0.25);
+
+                        if (distance < threshold) {
+                            const blockAngleRad = (block.angle * Math.PI) / 180;
+
+                            if (block.type === 'mirror') {
+                                path.push({ x: bx, y: by });
+                                const nx = Math.cos(blockAngleRad + Math.PI / 2);
+                                const ny = Math.sin(blockAngleRad + Math.PI / 2);
+                                const dot = dx * nx + dy * ny;
+                                dx = dx - 2 * dot * nx;
+                                dy = dy - 2 * dot * ny;
+                                curX = bx + dx * stepSize;
+                                curY = by + dy * stepSize;
+                            } 
+                            else if (block.type === 'water') {
+                                path.push({ x: bx, y: by });
+                                const currentAngle = Math.atan2(dy, dx);
+                                const bendDirection = (block.angle % 180 === 0) ? 1 : -1;
+                                const nextAngle = currentAngle + (bendDirection * Math.PI / 4);
+                                dx = Math.round(Math.cos(nextAngle) * 1000) / 1000;
+                                dy = Math.round(Math.sin(nextAngle) * 1000) / 1000;
+                                curX = bx + dx * stepSize;
+                                curY = by + dy * stepSize;
+                            } 
+                            else if (block.type === 'convex') {
+                                path.push({ x: nextX, y: nextY });
+                                const currentAngle = Math.atan2(dy, dx);
+                                const lx = -Math.sin(blockAngleRad);
+                                const ly = Math.cos(blockAngleRad);
+                                const lateralOffset = (nextX - bx) * lx + (nextY - by) * ly;
+                                const convergenceFactor = -0.015;
+                                const nextAngle = currentAngle + (lateralOffset * convergenceFactor);
+                                dx = Math.cos(nextAngle);
+                                dy = Math.sin(nextAngle);
+                                curX = nextX + dx * stepSize;
+                                curY = nextY + dy * stepSize;
+                            } 
+                            else if (block.type === 'concave') {
+                                path.push({ x: nextX, y: nextY });
+                                const currentAngle = Math.atan2(dy, dx);
+                                const lx = -Math.sin(blockAngleRad);
+                                const ly = Math.cos(blockAngleRad);
+                                const lateralOffset = (nextX - bx) * lx + (nextY - by) * ly;
+                                const divergenceFactor = 0.012; 
+                                const nextAngle = currentAngle + (lateralOffset * divergenceFactor);
+                                dx = Math.cos(nextAngle);
+                                dy = Math.sin(nextAngle);
+                                curX = nextX + dx * stepSize;
+                                curY = nextY + dy * stepSize;
+                            }
+                            
+                            lastHitBlock = block;
+                            continue;
+                        }
+                    }
+                } else {
+                    lastHitBlock = null; // 블록 구역을 벗어나면 초기화 (다시 충돌 가능)
+                }
+
+                curX = nextX;
+                curY = nextY;
+            }
+
+            if (path[path.length - 1].x !== curX || path[path.length - 1].y !== curY) {
+                path.push({ x: curX, y: curY });
+            }
+            return path;
+        }
+
+        // 전체 레이저 경로 시뮬레이터 및 성공 체크 버그 핫픽스
+        function calculateLaser(isManualFire = false) {
+            laserPaths = [];
+            
+            const emitterBaseX = (emitter.x + 0.5) * cellSize;
+            const emitterBaseY = (emitter.y + 0.5) * cellSize;
+            
+            let baseAngleRad = 0;
+            if (currentMode === 'tutorial') {
+                baseAngleRad = (emitter.angle * Math.PI) / 180;
+            } else {
+                const standardAngles = [0, Math.PI/2, Math.PI, -Math.PI/2];
+                baseAngleRad = standardAngles[emitter.dir];
+            }
+
+            const hasLensOnBoard = mirrors.some(m => m.type === 'convex' || m.type === 'concave');
+
+            if (currentMode === 'tutorial' && hasLensOnBoard) {
+                const perpX = -Math.sin(baseAngleRad);
+                const perpY = Math.cos(baseAngleRad);
+                const beamOffset = cellSize * 0.16; 
+
+                const offsets = [-beamOffset, 0, beamOffset];
+                
+                offsets.forEach(offset => {
+                    const sx = emitterBaseX + perpX * offset;
+                    const sy = emitterBaseY + perpY * offset;
+                    laserPaths.push(traceSingleLaser(sx, sy, baseAngleRad));
+                });
+            } else {
+                laserPaths.push(traceSingleLaser(emitterBaseX, emitterBaseY, baseAngleRad));
+            }
+
+            // 경로상의 모든 점을 순회하여 EXIT 셀 도달 여부 판정
+            // (루프 종료 후 직전 위치가 path 끝에 추가되는 구조로 인해 lastPoint만 확인하면 탐지 실패)
+            let isSuccessful = false;
+            laserPaths.forEach(path => {
+                path.forEach(point => {
+                    const pgx = Math.floor(point.x / cellSize);
+                    const pgy = Math.floor(point.y / cellSize);
+                    if (exit.x === pgx && exit.y === pgy) {
+                        isSuccessful = true;
+                    }
+                });
+            });
+
+            if (isSuccessful && currentMode !== 'tutorial') {
+                statusEl.innerText = "미로 탈출 성공!! 🎉";
+                statusEl.className = "text-emerald-400 font-bold";
+                
+                if (currentMode === 'game') {
+                    setTimeout(() => {
+                        const msg = GAME_LEVELS[gameLevelIndex].successMsg;
+                        showModal("MISSION CLEAR!", msg, "다음 레벨로", () => {
+                            gameLevelIndex++;
+                            loadGameStage(gameLevelIndex);
+                        });
+                    }, 600);
+                } else if (currentMode === 'creator-play') {
+                    setTimeout(() => {
+                        showModal("📐 제작 미로 테스트 성공!", "작성해주신 수수께끼 미로 맵 탈출에 아주 훌륭하게 성공했습니다!", "다시 편집하기", () => {
+                            currentMode = 'creator';
+                            modeBadge.innerText = "CREATOR LAB";
+                            isLaserActive = false;
+                            testPlayBtn.classList.remove('hidden');
+                            shareBtn.classList.remove('hidden');
+                            fireBtn.classList.add('hidden');
+                            statusEl.innerText = "수정 중...";
+                        });
+                    }, 600);
+                } else if (currentMode === 'creator-game') {
+                    setTimeout(() => {
+                        showModal("🎉 미로 클리어!", "내가 만든 미로를 멋지게 탈출했습니다! 빛의 반사와 굴절을 완벽하게 활용했네요!", "편집으로 돌아가기", () => {
+                            backToEditBtn.onclick();
+                        });
+                    }, 600);
+                } else if (currentMode === 'shared') {
+                    setTimeout(() => {
+                        showModal("🎉 공유 미로 탈출 성공!", "친구가 만든 레이저 미로를 성공적으로 탈출했습니다! 빛의 반사와 굴절 원리를 완벽하게 이해하셨네요!", "홈으로 돌아가기", () => {
+                            goHome();
+                        });
+                    }, 600);
+                }
+            } else {
+                if (currentMode === 'game' || currentMode === 'shared' || currentMode === 'creator-game') {
+                    if (isManualFire) {
+                        statusEl.innerText = "경로 설계 오류 ❌";
+                        statusEl.className = "text-rose-400 font-bold";
+
+                        lives--;
+                        updateLivesUI();
+
+                        if (lives <= 0) {
+                            const mode = currentMode;
+                            const btnText = (mode === 'game') ? "스테이지 재도전" : "처음부터 다시";
+                            setTimeout(() => {
+                                showModal("GAME OVER", "모든 하트를 소모했습니다. 블록을 다시 조정해 보세요!", btnText, () => {
+                                    lives = 3;
+                                    updateLivesUI();
+                                    if (mode === 'shared') {
+                                        reloadSharedMaze();
+                                    } else if (mode === 'creator-game') {
+                                        reloadCreatorGame();
+                                    } else {
+                                        loadGameStage(gameLevelIndex);
+                                    }
+                                });
+                            }, 500);
+                        }
+                    }
+                    // 블록 조정 중 재계산 시에는 하트 차감 없이 경로만 갱신
+                }
+            }
+        }
+
+        function updateLivesUI() {
+            heartUI.innerHTML = '';
+            for (let i = 0; i < 3; i++) {
+                const heart = document.createElement('span');
+                heart.innerText = i < lives ? '❤️' : '🖤';
+                heartUI.appendChild(heart);
+            }
+        }
+
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            if (cellSize > 0) {
+                ctx.strokeStyle = 'rgba(56, 189, 248, 0.07)';
+                ctx.lineWidth = 1;
+                for (let i = 0; i <= canvas.width; i += cellSize) {
+                    ctx.beginPath(); ctx.moveTo(i, 0); ctx.lineTo(i, canvas.height); ctx.stroke();
+                }
+                for (let j = 0; j <= canvas.height; j += cellSize) {
+                    ctx.beginPath(); ctx.moveTo(0, j); ctx.lineTo(canvas.width, j); ctx.stroke();
+                }
+
+                if (activeSelection?.source === 'board') {
+                    const hx = activeSelection.block.x * cellSize;
+                    const hy = activeSelection.block.y * cellSize;
+                    ctx.save();
+                    ctx.fillStyle = 'rgba(56, 189, 248, 0.15)';
+                    ctx.fillRect(hx, hy, cellSize, cellSize);
+                    ctx.strokeStyle = '#38bdf8';
+                    ctx.lineWidth = 2;
+                    ctx.setLineDash([6, 4]);
+                    ctx.strokeRect(hx + 1, hy + 1, cellSize - 2, cellSize - 2);
+                    ctx.restore();
+                }
+
+                walls.forEach(w => {
+                    const x = w.x * cellSize;
+                    const y = w.y * cellSize;
+                    
+                    ctx.fillStyle = w.isUserWall ? '#312e81' : '#0f172a'; 
+                    ctx.fillRect(x + 2, y + 2, cellSize - 4, cellSize - 4);
+                    
+                    ctx.strokeStyle = w.isUserWall ? '#a855f7' : '#0284c7'; 
+                    ctx.lineWidth = 2;
+                    ctx.strokeRect(x + 2, y + 2, cellSize - 4, cellSize - 4);
+
+                    ctx.fillStyle = 'rgba(255, 255, 255, 0.03)';
+                    ctx.fillRect(x + 6, y + 6, cellSize - 12, cellSize - 12);
+                });
+
+                const exitX = exit.x * cellSize;
+                const exitY = exit.y * cellSize;
+
+                if (currentMode !== 'tutorial') {
+                ctx.save();
+                ctx.fillStyle = '#0f172a';
+                ctx.fillRect(exitX + cellSize * 0.2, exitY + cellSize * 0.15, cellSize * 0.6, cellSize * 0.7);
+
+                ctx.strokeStyle = '#94a3b8';
+                ctx.lineWidth = 3;
+                ctx.strokeRect(exitX + cellSize * 0.2, exitY + cellSize * 0.15, cellSize * 0.6, cellSize * 0.7);
+
+                ctx.fillStyle = '#38bdf8';
+                ctx.beginPath();
+                ctx.moveTo(exitX + cellSize * 0.2, exitY + cellSize * 0.15);
+                ctx.lineTo(exitX + cellSize * 0.45, exitY + cellSize * 0.25);
+                ctx.lineTo(exitX + cellSize * 0.45, exitY + cellSize * 0.75);
+                ctx.lineTo(exitX + cellSize * 0.2, exitY + cellSize * 0.85);
+                ctx.fill();
+
+                ctx.shadowBlur = 20;
+                ctx.shadowColor = '#34d399';
+                ctx.fillStyle = 'rgba(52, 211, 153, 0.3)';
+                ctx.fillRect(exitX + cellSize * 0.45, exitY + cellSize * 0.15, cellSize * 0.35, cellSize * 0.7);
+
+                ctx.shadowBlur = 0;
+                ctx.font = `bold ${cellSize * 0.15}px Orbitron`;
+                ctx.fillStyle = '#ffffff';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText('EXIT', exitX + cellSize * 0.62, exitY + cellSize * 0.5);
+                ctx.restore();
+                }
+
+                ctx.save();
+                ctx.translate((emitter.x + 0.5) * cellSize, (emitter.y + 0.5) * cellSize);
+                if (currentMode === 'tutorial') {
+                    ctx.rotate((emitter.angle * Math.PI) / 180);
+                } else {
+                    const standardAngles = [0, Math.PI/2, Math.PI, -Math.PI/2];
+                    ctx.rotate(standardAngles[emitter.dir]);
+                }
+                
+                ctx.fillStyle = '#1e293b';
+                ctx.beginPath();
+                ctx.arc(0, 0, cellSize*0.35, 0, Math.PI*2);
+                ctx.fill();
+                ctx.strokeStyle = '#f43f5e';
+                ctx.lineWidth = 3;
+                ctx.stroke();
+
+                ctx.fillStyle = '#f43f5e';
+                ctx.fillRect(0, -cellSize*0.09, cellSize*0.42, cellSize*0.18);
+                ctx.fillStyle = '#ffffff';
+                ctx.fillRect(cellSize*0.35, -cellSize*0.09, cellSize*0.07, cellSize*0.18);
+                ctx.restore();
+
+                mirrors.forEach(m => {
+                    const bx = (m.x + 0.5) * cellSize;
+                    const by = (m.y + 0.5) * cellSize;
+
+                    ctx.save();
+                    ctx.translate(bx, by);
+                    ctx.rotate((m.angle * Math.PI) / 180);
+
+                    if (m.type === 'mirror') {
+                        ctx.shadowBlur = 10;
+                        ctx.shadowColor = '#38bdf8';
+                        
+                        ctx.fillStyle = '#1e293b';
+                        ctx.fillRect(-cellSize * 0.42, 1, cellSize * 0.84, 6);
+                        ctx.fillStyle = '#94a3b8';
+                        ctx.fillRect(-cellSize * 0.42, -2, cellSize * 0.84, 3);
+                        ctx.fillStyle = '#f1f5f9';
+                        ctx.fillRect(-cellSize * 0.42, -5, cellSize * 0.84, 3);
+                        
+                        ctx.fillStyle = '#38bdf8';
+                        ctx.fillRect(-cellSize * 0.42, -6, cellSize * 0.84, 1);
+                    } 
+                    else if (m.type === 'water') {
+                        const isCW = (m.angle % 180 === 0);
+                        const borderCol = isCW ? '#0ea5e9' : '#a855f7';
+                        const bgCol    = isCW ? 'rgba(14,165,233,0.2)' : 'rgba(168,85,247,0.18)';
+                        const arrCol   = isCW ? '#7dd3fc' : '#d8b4fe';
+
+                        ctx.fillStyle = bgCol;
+                        ctx.fillRect(-cellSize * 0.42, -cellSize * 0.42, cellSize * 0.84, cellSize * 0.84);
+                        ctx.strokeStyle = borderCol;
+                        ctx.lineWidth = 2.5;
+                        ctx.strokeRect(-cellSize * 0.42, -cellSize * 0.42, cellSize * 0.84, cellSize * 0.84);
+
+                        ctx.save();
+                        ctx.rotate((-m.angle * Math.PI) / 180);
+
+                        // 화살표 치수
+                        const s  = cellSize * 0.27;   // 반폭
+                        const hl = cellSize * 0.10;   // 화살촉 길이
+                        const lw = Math.max(2, cellSize * 0.05);
+                        const outY = isCW ? s : -s;   // CW: 아래, CCW: 위
+
+                        ctx.strokeStyle = arrCol;
+                        ctx.fillStyle   = arrCol;
+                        ctx.lineWidth   = lw;
+                        ctx.lineCap     = 'round';
+                        ctx.lineJoin    = 'round';
+
+                        // 입사 화살표 → (왼쪽→중앙)
+                        ctx.beginPath();
+                        ctx.moveTo(-s * 1.2, 0);
+                        ctx.lineTo(0, 0);
+                        ctx.stroke();
+                        // 입사 화살촉
+                        ctx.beginPath();
+                        ctx.moveTo(0, 0);
+                        ctx.lineTo(-hl, -hl * 0.5);
+                        ctx.lineTo(-hl,  hl * 0.5);
+                        ctx.closePath();
+                        ctx.fill();
+
+                        // 굴절 화살표 → ↘ (CW) 또는 ↗ (CCW)
+                        ctx.beginPath();
+                        ctx.moveTo(0, 0);
+                        ctx.lineTo(s, outY);
+                        ctx.stroke();
+                        // 굴절 화살촉
+                        const ang = Math.atan2(outY, s);
+                        ctx.beginPath();
+                        ctx.moveTo(s, outY);
+                        ctx.lineTo(s - hl * Math.cos(ang - 0.45), outY - hl * Math.sin(ang - 0.45));
+                        ctx.lineTo(s - hl * Math.cos(ang + 0.45), outY - hl * Math.sin(ang + 0.45));
+                        ctx.closePath();
+                        ctx.fill();
+
+                        // 꺾임점 원
+                        ctx.beginPath();
+                        ctx.arc(0, 0, cellSize * 0.055, 0, Math.PI * 2);
+                        ctx.fill();
+
+                        // 방향 레이블 (+45° ↻ / -45° ↺)
+                        ctx.textAlign    = 'center';
+                        ctx.textBaseline = 'middle';
+                        ctx.fillStyle    = borderCol;
+                        ctx.font = `bold ${cellSize * 0.17}px Arial`;
+                        ctx.fillText(isCW ? '+45° ↻' : '-45° ↺', 0, isCW ? -s * 1.3 : s * 1.3);
+
+                        // 💧 이모지
+                        ctx.font      = `${cellSize * 0.22}px Arial`;
+                        ctx.fillStyle = '#ffffff';
+                        ctx.fillText('💧', -s * 0.65, outY * 0.65);
+
+                        ctx.restore();
+                    } 
+                    else if (m.type === 'convex') {
+                        ctx.fillStyle = 'rgba(234, 179, 8, 0.08)';
+                        ctx.fillRect(-cellSize * 0.5, -cellSize * 0.5, cellSize, cellSize);
+                        
+                        ctx.beginPath();
+                        ctx.ellipse(0, 0, cellSize * 0.18, cellSize * 0.44, 0, 0, Math.PI * 2);
+                        ctx.fillStyle = 'rgba(234, 179, 8, 0.45)';
+                        ctx.fill();
+                        ctx.strokeStyle = '#eab308';
+                        ctx.lineWidth = 3;
+                        ctx.stroke();
+                        
+                        ctx.font = `bold ${cellSize * 0.22}px Orbitron`;
+                        ctx.fillStyle = '#eab308';
+                        ctx.textAlign = 'center';
+                        ctx.fillText('CONVEX', 0, 0);
+                    } 
+                    else if (m.type === 'concave') {
+                        ctx.fillStyle = 'rgba(168, 85, 247, 0.08)';
+                        ctx.fillRect(-cellSize * 0.5, -cellSize * 0.5, cellSize, cellSize);
+                        
+                        ctx.fillStyle = 'rgba(168, 85, 247, 0.45)';
+                        ctx.beginPath();
+                        ctx.moveTo(-cellSize * 0.18, -cellSize * 0.42);
+                        ctx.quadraticCurveTo(0, 0, -cellSize * 0.18, cellSize * 0.42);
+                        ctx.lineTo(cellSize * 0.18, cellSize * 0.42);
+                        ctx.quadraticCurveTo(0, 0, cellSize * 0.18, -cellSize * 0.42);
+                        ctx.closePath();
+                        ctx.fill();
+                        
+                        ctx.strokeStyle = '#a855f7';
+                        ctx.lineWidth = 3;
+                        ctx.stroke();
+
+                        ctx.font = `bold ${cellSize * 0.22}px Orbitron`;
+                        ctx.fillStyle = '#c084fc';
+                        ctx.textAlign = 'center';
+                        ctx.fillText('CONCAVE', 0, 0);
+                    }
+                    ctx.restore();
+                });
+
+                if (isLaserActive && laserPaths.length > 0) {
+                    laserPaths.forEach(path => {
+                        if (path.length > 1) {
+                            ctx.save();
+                            ctx.beginPath();
+                            ctx.moveTo(path[0].x, path[0].y);
+                            for (let p = 1; p < path.length; p++) {
+                                ctx.lineTo(path[p].x, path[p].y);
+                            }
+                            
+                            ctx.shadowBlur = 20;
+                            ctx.shadowColor = '#f43f5e';
+                            ctx.strokeStyle = '#f43f5e';
+                            ctx.lineWidth = 5;
+                            ctx.lineCap = 'round';
+                            ctx.lineJoin = 'round';
+                            ctx.stroke();
+
+                            ctx.shadowBlur = 0;
+                            ctx.strokeStyle = '#ffffff';
+                            ctx.lineWidth = 1.8;
+                            ctx.stroke();
+                            ctx.restore();
+                        }
+                    });
+                }
+            }
+            requestAnimationFrame(draw);
+        }
+
+        fireBtn.onclick = () => {
+            isLaserActive = true;
+            calculateLaser(true);
+        };
+
+        testPlayBtn.onclick = () => {
+            if (currentMode === 'creator') {
+                currentMode = 'creator-play';
+                modeBadge.innerText = "LASER TEST";
+                isLaserActive = true;
+                shareBtn.classList.add('hidden');
+                gameStartBtn.classList.add('hidden');
+                testPlayBtn.innerText = "⏹️ 발사 중단";
+                statusEl.innerText = "레이저 발사 중";
+                statusEl.className = "text-yellow-400 font-bold";
+                activeSelection = null;
+                handleSelectionChange();
+                calculateLaser();
+            } else {
+                currentMode = 'creator';
+                modeBadge.innerText = "CREATOR LAB";
+                isLaserActive = false;
+                shareBtn.classList.remove('hidden');
+                gameStartBtn.classList.remove('hidden');
+                testPlayBtn.innerText = "⚡ 레이저 발사";
+                statusEl.innerText = "수정 중...";
+                statusEl.className = "text-sky-400";
+            }
+        };
+
+        // 디자인 스냅샷(게임 시작 시 보관 → 편집 복귀 시 복원)
+        let _creatorSnapshot = null;
+
+        // 자유 플레이용 보관함(거울/물 블록 무제한)
+        function freePlayInventory() {
+            return [
+                { type: 'mirror', active: true, label: "평면거울" },
+                { type: 'water', active: true, label: "물 블록" }
+            ];
+        }
+
+        // 🎮 게임 시작: 설계한 미로를 2단계 미로 탈출 게임 포맷으로 전환
+        gameStartBtn.onclick = () => {
+            // 현재 설계 상태를 스냅샷으로 저장(편집 복귀용)
+            _creatorSnapshot = {
+                walls: walls.map(w => ({ ...w })),
+                mirrors: mirrors.map(m => ({ ...m })),
+                emitter: { ...emitter },
+                exit: { ...exit },
+                gridCols, gridRows
+            };
+            startCreatorGame();
+        };
+
+        function startCreatorGame() {
+            currentMode = 'creator-game';
+            modeBadge.innerText = "PLAY MODE";
+            titleDisplay.innerText = "내가 만든 미로 도전!";
+
+            // 블록(벽)만 남기고 설계자가 배치한 거울/물 블록은 제거
+            mirrors = [];
+            lives = 3;
+            updateLivesUI();
+            livesContainer.classList.remove('hidden');
+            isLaserActive = false;
+            laserPaths = [];
+            activeSelection = null;
+
+            testPlayBtn.classList.add('hidden');
+            gameStartBtn.classList.add('hidden');
+            shareBtn.classList.add('hidden');
+            backToEditBtn.classList.remove('hidden');
+            fireBtn.classList.remove('hidden');
+            fireBtn.innerText = "⚡ 레이저 발사!";
+
+            sidebarTitle.innerText = "미션 교구";
+            guideTip.innerText = "💡 거울과 물 블록을 자유롭게 배치해 레이저를 EXIT로 유도하세요!";
+            lawDescription.innerHTML = `
+                <p>🪞 <b class="text-slate-200">평면거울:</b> 터치 시 45도씩 회전하며 빛을 반사시킵니다.</p>
+                <p>💧 <b class="text-slate-200">물 블록:</b> 통과 시 빛이 <b>45도</b>로 꺾입니다. 터치해 ↻/↺ 방향을 변경하세요.</p>
+            `;
+
+            inventoryItems = freePlayInventory();
+            handleSelectionChange();
+
+            statusEl.innerText = "배치 대기 중";
+            statusEl.className = "text-sky-400 font-bold";
+
+            showModal(
+                "🎮 게임 시작!",
+                `<p class="text-slate-300 leading-relaxed">설계한 미로에 도전해 보세요!<br><br>
+                 🪞 <b class="text-sky-300">거울</b>과 💧 <b class="text-sky-300">물 블록</b>을 자유롭게 배치·회전하여,<br>
+                 <b class="text-rose-400">⚡ 레이저 발사!</b> 버튼으로 탈출구(EXIT)에 빛을 보내세요!<br>
+                 <span class="text-slate-400 text-sm">목숨은 3개! 빗나가면 하트가 줄어듭니다.</span></p>`,
+                "도전 시작!"
+            );
+        }
+
+        function reloadCreatorGame() {
+            if (!_creatorSnapshot) return;
+            walls = _creatorSnapshot.walls.map(w => ({ ...w }));
+            emitter = { ..._creatorSnapshot.emitter };
+            exit = { ..._creatorSnapshot.exit };
+            gridCols = _creatorSnapshot.gridCols;
+            gridRows = _creatorSnapshot.gridRows;
+            resizeCanvas();
+            startCreatorGame();
+        }
+
+        // ✏️ 편집으로 돌아가기: 저장한 설계 상태를 복원
+        backToEditBtn.onclick = () => {
+            if (!_creatorSnapshot) { startMode('creator'); return; }
+            currentMode = 'creator';
+            modeBadge.innerText = "CREATOR LAB";
+            titleDisplay.innerText = "미로 설계하기";
+            sidebarTitle.innerText = "배치할 블록";
+            guideTip.innerText = "💡 원하는 벽과 굴절/반사 블록을 눌러 맵에 배치하며 나만의 미로를 조각해 보세요!";
+
+            gridCols = _creatorSnapshot.gridCols;
+            gridRows = _creatorSnapshot.gridRows;
+            resizeCanvas();
+            walls = _creatorSnapshot.walls.map(w => ({ ...w }));
+            mirrors = _creatorSnapshot.mirrors.map(m => ({ ...m }));
+            emitter = { ..._creatorSnapshot.emitter };
+            exit = { ..._creatorSnapshot.exit };
+
+            lives = 3;
+            isLaserActive = false;
+            laserPaths = [];
+            activeSelection = null;
+
+            livesContainer.classList.add('hidden');
+            backToEditBtn.classList.add('hidden');
+            fireBtn.classList.add('hidden');
+            testPlayBtn.classList.remove('hidden');
+            testPlayBtn.innerText = "⚡ 레이저 발사";
+            gameStartBtn.classList.remove('hidden');
+            shareBtn.classList.remove('hidden');
+
+            lawDescription.innerHTML = `
+                <p>🪞 <b class="text-slate-200">평면거울:</b> 거울 반사 경로 설계</p>
+                <p>💧 <b class="text-slate-200">물 블록:</b> 45도 굴절 구간 설계</p>
+                <p>🧱 <b class="text-slate-200">미로 벽:</b> 빛이 통과할 수 없는 차단벽</p>
+            `;
+
+            inventoryItems = [
+                { type: 'mirror', active: true, label: "평면거울" },
+                { type: 'water', active: true, label: "물 블록" },
+                { type: 'wall', active: true, label: "미로 벽" }
+            ];
+            handleSelectionChange();
+            statusEl.innerText = "수정 중...";
+            statusEl.className = "text-sky-400 font-bold";
+        };
+
+        // ─── 미로 공유 기능 ──────────────────────────────────────────
+        const TYPE_CODE = { mirror: 'm', water: 'w', convex: 'v', concave: 'n' };
+        const CODE_TYPE = { m: 'mirror', w: 'water', v: 'convex', n: 'concave' };
+
+        // 그리드 전체를 1셀 1문자로 인코딩 → base64
+        // 10×8 = 항상 82자 → base64 112자 (벽·블록 수와 무관)
+        // 문자 대응: '0'=빈칸 '1'=벽 E/F/G/H=발사체(방향0-3) X=탈출구
+        //            a-h=거울(45°단위) A-D=물블록(90°단위) V=볼록 N=오목
+        function serializeMaze() {
+            try {
+                const emitCh = ['E','F','G','H'];
+                const mirCh  = 'abcdefgh';   // 각도 0,45,90,135,180,225,270,315
+                const watCh  = 'ABCD';       // 각도 0,90,180,270
+
+                let str = gridCols.toString(16) + gridRows.toString(16);
+                for (let y = 0; y < gridRows; y++) {
+                    for (let x = 0; x < gridCols; x++) {
+                        if (emitter.x === x && emitter.y === y) {
+                            str += emitCh[emitter.dir] || 'E';
+                        } else if (exit.x === x && exit.y === y) {
+                            str += 'X';
+                        } else if (walls.some(w => w.x === x && w.y === y && w.isUserWall)) {
+                            str += '1';
+                        } else {
+                            // '게임 시작' 상태와 동일하게: 벽만 남기고 설계자가 배치한
+                            // 거울/물 블록은 공유하지 않음(플레이어가 직접 배치)
+                            str += '0';
+                        }
+                    }
+                }
+                return btoa(str);
+            } catch (e) {
+                return null;
+            }
+        }
+
+        function deserializeMaze(encoded) {
+            try {
+                const raw = atob(encoded);
+                // 구버전 JSON 포맷 호환
+                if (raw.startsWith('{')) {
+                    return JSON.parse(decodeURIComponent(escape(raw)));
+                }
+                // 신버전 그리드 포맷
+                const cols = parseInt(raw[0], 16);
+                const rows = parseInt(raw[1], 16);
+                const body = raw.slice(2);
+                if (isNaN(cols) || isNaN(rows) || body.length !== cols * rows) return null;
+
+                const mirAngles = [0,45,90,135,180,225,270,315];
+                const watAngles = [0,90,180,270];
+                const data = { c: cols, r: rows, w: [], b: [], e: [0,0,0], x: [0,0] };
+
+                for (let i = 0; i < body.length; i++) {
+                    const ch = body[i];
+                    const x = i % cols, y = Math.floor(i / cols);
+                    if      (ch === '1') data.w.push([x, y]);
+                    else if (ch === 'E') data.e = [x, y, 0];
+                    else if (ch === 'F') data.e = [x, y, 1];
+                    else if (ch === 'G') data.e = [x, y, 2];
+                    else if (ch === 'H') data.e = [x, y, 3];
+                    else if (ch === 'X') data.x = [x, y];
+                    else if ('abcdefgh'.includes(ch)) data.b.push([x, y, 'm', mirAngles['abcdefgh'.indexOf(ch)]]);
+                    else if ('ABCD'.includes(ch))     data.b.push([x, y, 'w', watAngles['ABCD'.indexOf(ch)]]);
+                    else if (ch === 'V') data.b.push([x, y, 'v', 0]);
+                    else if (ch === 'N') data.b.push([x, y, 'n', 0]);
+                }
+                return data;
+            } catch (e) {
+                return null;
+            }
+        }
+
+        let _sharedSnapshot = null; // 리셋용 스냅샷
+
+        function loadSharedMaze(data) {
+            _sharedSnapshot = data;
+            currentMode = 'shared';
+            document.getElementById('home-screen').classList.add('hidden');
+
+            gridCols = data.c || 10;
+            gridRows = data.r || 8;
+            resizeCanvas();
+
+            emitter = { x: data.e[0], y: data.e[1], dir: data.e[2] || 0, angle: 0 };
+            exit    = { x: data.x[0], y: data.x[1] };
+
+            walls = (data.w || []).map(([x, y]) => ({ x, y, isUserWall: true, inventoryIdx: -1 }));
+            mirrors = [];
+
+            lives = 3;
+            isLaserActive = false;
+            laserPaths = [];
+            activeSelection = null;
+            inventoryItems = freePlayInventory();
+            updateLivesUI();
+            handleSelectionChange();
+
+            modeBadge.innerText   = "SHARED MAZE";
+            titleDisplay.innerText = "공유된 레이저 미로";
+            sidebarTitle.innerText = "미션 교구";
+            guideTip.innerText    = "💡 거울과 물 블록을 자유롭게 배치해 레이저를 EXIT로 유도하세요!";
+
+            tutorialControl.classList.add('hidden');
+            livesContainer.classList.remove('hidden');
+            testPlayBtn.classList.add('hidden');
+            gameStartBtn.classList.add('hidden');
+            backToEditBtn.classList.add('hidden');
+            shareBtn.classList.add('hidden');
+            fireBtn.classList.remove('hidden');
+            fireBtn.innerText = "⚡ 레이저 발사!";
+
+            lawDescription.innerHTML = `
+                <p>🪞 <b class="text-slate-200">평면거울:</b> 터치 시 45도씩 회전하며 빛을 반사시킵니다.</p>
+                <p>💧 <b class="text-slate-200">물 블록:</b> 통과 시 빛이 <b>45도</b>로 꺾입니다. 터치해 ↻/↺ 방향을 변경하세요.</p>
+            `;
+
+            statusEl.innerText = "배치 대기 중";
+            statusEl.className = "text-sky-400 font-bold";
+
+            showModal(
+                "🔗 공유된 레이저 미로!",
+                `<p class="text-slate-300 leading-relaxed">친구가 만든 레이저 미로에 초대되었습니다!<br><br>
+                 🪞 <b class="text-sky-300">거울</b>과 💧 <b class="text-sky-300">물 블록</b>을 자유롭게 배치·회전하여,<br>
+                 <b class="text-rose-400">⚡ 레이저 발사!</b> 버튼을 눌러 탈출구(EXIT)로 유도해 보세요!<br>
+                 <span class="text-slate-400 text-sm">목숨은 3개! 빗나가면 하트가 줄어듭니다.</span></p>`,
+                "도전 시작!"
+            );
+        }
+
+        function reloadSharedMaze() {
+            if (_sharedSnapshot) {
+                loadSharedMaze(_sharedSnapshot);
+            }
+        }
+
+        // 공유 버튼 클릭 핸들러
+        shareBtn.addEventListener('click', () => {
+            const encoded = serializeMaze();
+            if (!encoded) {
+                showModal("⚠️ 공유 실패", "미로 데이터를 변환하는 중 오류가 발생했습니다.", "확인");
+                return;
+            }
+
+            const base     = window.location.href.split('#')[0];
+            const shareUrl = `${base}#s=${encoded}`;
+
+            const modalHtml = `
+                <div class="text-left">
+                    <textarea id="share-url-area" rows="3" onclick="this.select()"
+                        class="w-full text-xs bg-slate-950 border border-sky-500/50 rounded-xl px-3 py-2.5 text-sky-300 resize-none break-all outline-none focus:border-sky-400 font-mono leading-relaxed"
+                        readonly>${shareUrl}</textarea>
+                </div>
+            `;
+
+            showModal("🔗 미로 공유하기", modalHtml, "🔗 링크 공유하기", () => {
+                const urlArea = document.getElementById('share-url-area');
+                navigator.clipboard.writeText(shareUrl)
+                    .then(() => showModal("✅ 복사 완료!", "공유 링크가 클립보드에 복사되었습니다!<br><span class='text-slate-400 text-sm'>카카오톡, 이메일 등으로 친구에게 보내보세요 🎉</span>", "확인"))
+                    .catch(() => { if (urlArea) { urlArea.select(); document.execCommand('copy'); } });
+            });
+        });
+
+        document.getElementById('reset-btn').onclick = () => {
+            if (currentMode === 'tutorial') {
+                setupTutorialMap();
+            } else if (currentMode === 'game') {
+                lives = 3;
+                updateLivesUI();
+                loadGameStage(gameLevelIndex);
+            } else if (currentMode === 'shared' || currentMode === 'shared-play') {
+                reloadSharedMaze();
+            } else if (currentMode === 'creator-game') {
+                lives = 3;
+                updateLivesUI();
+                reloadCreatorGame();
+            } else {
+                setupCreatorMap();
+            }
+        };
+
+        window.onload = () => {
+            updateLivesUI();
+            resizeCanvas();
+            draw();
+            // 공유 URL로 접근한 경우 즉시 공유 미로 로드
+            const hash = window.location.hash;
+            const match = hash.match(/^#s=(.+)/);
+            if (match) {
+                const data = deserializeMaze(match[1]);
+                if (data) {
+                    loadSharedMaze(data);
+                } else {
+                    showModal("⚠️ 공유 링크 오류", "유효하지 않은 미로 공유 링크입니다.", "홈으로");
+                }
+            }
+        };
+
+        window.onresize = () => {
+            if (currentMode !== 'home') {
+                resizeCanvas();
+                if (currentMode === 'tutorial') {
+                    calculateLaser();
+                }
+            }
+        };
+    </script>
+</body>
+</html>
