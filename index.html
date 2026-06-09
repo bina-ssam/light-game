@@ -303,6 +303,7 @@
         const modalTitle = document.getElementById('modal-title');
         const modalContent = document.getElementById('modal-content');
         const modalBtn = document.getElementById('modal-btn');
+        const modalIcon = document.getElementById('modal-icon');
         document.getElementById('modal-close-btn').onclick = () => gameModal.classList.add('hidden');
         const fireBtn = document.getElementById('fire-btn');
         const testPlayBtn = document.getElementById('test-play-btn');
@@ -555,6 +556,11 @@
         }
 
         function showModal(title, text, btnText, callback) {
+            // 다른 모달이 바꿔놓았을 수 있는 아이콘/제목 스타일을 기본값으로 복원
+            modalIcon.innerHTML = '💡';
+            modalIcon.className = "w-16 h-16 rounded-full bg-sky-500/10 border border-sky-500/20 flex items-center justify-center text-3xl mx-auto mb-4";
+            modalTitle.className = "text-3xl title-font text-sky-400 mb-3";
+            modalBtn.className = "w-full bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-400 hover:to-blue-500 text-white font-bold text-lg py-3.5 rounded-2xl transition-all shadow-lg shadow-sky-500/10 active:scale-95";
             modalTitle.innerText = title;
             modalContent.innerHTML = text;
             modalBtn.innerText = btnText;
@@ -562,6 +568,41 @@
             modalBtn.onclick = () => {
                 gameModal.classList.add('hidden');
                 if (callback) callback();
+            };
+        }
+
+        // 🏆 게임 모드 전체 클리어 시 표시되는 화려한 마스터 축하 모달
+        function showMasterModal() {
+            modalIcon.innerHTML = '🏆';
+            modalIcon.className = "w-20 h-20 rounded-full bg-gradient-to-br from-amber-400/25 to-yellow-500/10 border border-amber-400/40 flex items-center justify-center text-4xl mx-auto mb-4 animate-bounce";
+            modalTitle.innerHTML = '<span class="text-transparent bg-clip-text bg-gradient-to-r from-amber-300 via-yellow-200 to-amber-400">미로 탈출을 축하합니다!</span>';
+            modalTitle.className = "text-3xl md:text-4xl title-font mb-3 drop-shadow";
+            modalContent.innerHTML = `
+                <div class="space-y-4">
+                    <p class="text-lg md:text-xl font-extrabold tracking-tight">
+                        <span class="text-transparent bg-clip-text bg-gradient-to-r from-sky-300 via-teal-200 to-purple-300">✨ 당신은 빛의 성질 마스터 ✨</span>
+                    </p>
+                    <p class="text-slate-300 leading-relaxed text-sm md:text-base">
+                        빛의 <b class="text-sky-300">직진</b> · <b class="text-teal-300">반사</b> · <b class="text-purple-300">굴절</b>을<br>모두 완벽하게 정복했어요!
+                    </p>
+                    <div class="flex justify-center gap-3 text-3xl animate-pulse">🎉 🪞 💧 🔦 🎉</div>
+                    <p class="text-xs text-amber-300/90 font-semibold mt-2">📸 이 창을 캡쳐하세요!</p>
+                </div>`;
+            modalBtn.className = "w-full bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 text-slate-900 font-bold text-lg py-3.5 rounded-2xl transition-all shadow-lg shadow-amber-500/20 active:scale-95";
+            modalBtn.innerText = "📸 캡쳐 다 하셨나요?";
+            gameModal.classList.remove('hidden');
+
+            // 1차 클릭: '캡쳐 다 하셨나요?' → 버튼을 '확인'으로 전환 (창 유지)
+            modalBtn.onclick = () => {
+                modalBtn.innerText = "확인";
+                modalBtn.className = "w-full bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-400 hover:to-blue-500 text-white font-bold text-lg py-3.5 rounded-2xl transition-all shadow-lg shadow-sky-500/10 active:scale-95";
+                // 2차 클릭: '확인' → 창 닫고 홈으로
+                modalBtn.onclick = () => {
+                    gameModal.classList.add('hidden');
+                    // 버튼 기본 스타일 복원 (다른 모달에 영향 없도록)
+                    modalBtn.className = "w-full bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-400 hover:to-blue-500 text-white font-bold text-lg py-3.5 rounded-2xl transition-all shadow-lg shadow-sky-500/10 active:scale-95";
+                    goHome();
+                };
             };
         }
 
@@ -593,9 +634,7 @@
 
         function loadGameStage(idx) {
             if (idx >= GAME_LEVELS.length) {
-                showModal("미로 탈출을 축하합니다!", "<span class=\"text-xs text-slate-400\">이 창을 캡쳐하세요!</span>", "확인", () => {
-                    goHome();
-                });
+                showMasterModal();
                 return;
             }
 
