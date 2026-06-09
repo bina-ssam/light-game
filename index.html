@@ -593,8 +593,8 @@
 
         function loadGameStage(idx) {
             if (idx >= GAME_LEVELS.length) {
-                showModal("🎖️ 미션 올클리어!", "모든 5학년 '빛의 성질' 탈출 미로를 돌파하셨습니다! 이제 <b>미로 설계 모드</b>에서 나만의 참신한 레이저 탈출 맵을 설계해 보세요!", "설계 모드 열기", () => {
-                    startMode('creator');
+                showModal("미로 탈출을 축하합니다!", "<span class=\"text-xs text-slate-400\">이 창을 캡쳐하세요!</span>", "확인", () => {
+                    goHome();
                 });
                 return;
             }
@@ -1627,7 +1627,8 @@
             emitter = { x: data.e[0], y: data.e[1], dir: data.e[2] || 0, angle: 0 };
             exit    = { x: data.x[0], y: data.x[1] };
 
-            walls = (data.w || []).map(([x, y]) => ({ x, y, isUserWall: true, inventoryIdx: -1 }));
+            // 공유된 미로의 벽은 출제자가 만든 고정 벽 → 플레이어가 수정/이동/삭제할 수 없도록 isUserWall: false 처리
+            walls = (data.w || []).map(([x, y]) => ({ x, y, isUserWall: false, inventoryIdx: -1 }));
             mirrors = [];
 
             lives = 3;
